@@ -13,7 +13,7 @@ func main()  {
 		fmt.Errorf(err.Error())
 	}
 	http.HandleFunc("/", HandleRoot)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(fmt.Sprintf(":%s", p.port), nil)
 }
 
 func HandleRoot(resp http.ResponseWriter, req *http.Request){
