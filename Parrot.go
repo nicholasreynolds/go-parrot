@@ -10,7 +10,7 @@ type Parrot struct {
 }
 
 func GetParrot() (Parrot, error) {
-	p := Parrot{forwarding: os.Args[1]}
+	p := Parrot{forwarding: os.Getenv("URL")}
 	if !isURLValid(p.forwarding) {
 		return Parrot{}, InvalidForwardingAddress{p.forwarding}
 	}
