@@ -2,23 +2,20 @@ package main
 
 import (
 	"fmt"
-	"net/http"
+	"os"
 )
 
-var p Parrot
-func main()  {
-	var err error
-	p, err = GetParrot()
-	if err != nil {
-		fmt.Errorf(err.Error())
+func main() {
+	printError := func(err error) {
+		if err != nil {
+			fmt.Errorf(err.Error())
+		}
 	}
-	http.HandleFunc("/", HandleRoot)
-	http.ListenAndServe(fmt.Sprintf(":%s", p.port), nil)
-}
-
-func HandleRoot(resp http.ResponseWriter, req *http.Request){
-	fmt.Println(req)
-
-	handler := Handler{resp, req}
-	handler.Handle(req.Method)
+	polly, err := GetParrot(
+		os.Getenv("URL"),
+		os.Getenv("PORT"),
+		os.Getenv("ROUTE"),
+	)
+	printError(err)
+	printError(polly.ListenAndRepeat())
 }

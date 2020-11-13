@@ -1,35 +1,46 @@
 package main
 
 import (
+	"fmt"
 	"github.com/asaskevich/govalidator"
-	"os"
+	"net/http"
 )
 
 type Parrot struct {
 	forwarding string
 	port string
+	route string
 }
 
-func GetParrot() (Parrot, error) {
-	p := Parrot {
-		forwarding: os.Getenv("URL"),
-		port: os.Getenv("PORT"),
+func GetParrot(forwarding string, port string, route string) (Parrot, error) {
+	if !govalidator.IsURL(forwarding) {
+		return Parrot{}, InvalidForwardingAddress{forwarding}
 	}
-
-	if !isURLValid(p.forwarding) {
-		return Parrot{}, InvalidForwardingAddress{p.forwarding}
+	if !govalidator.IsPort(port) {
+		return Parrot{}, InvalidPort{port}
 	}
-	if !isPortValid(p.port) {
-		return Parrot{}, InvalidPort{p.port}
+	if !isRouteValid(route) {
+		return Parrot{}, InvalidRoute{route}
 	}
-	return p, nil
+	return Parrot{
+		forwarding: forwarding,
+		port: port,
+		route: route,
+	}, nil
 }
 
-func isURLValid(url string) bool {
-	return govalidator.IsURL(url)
+func isRouteValid(route string) bool {
+	return govalidator.StringMatches("(/|[a-z]|[A-Z]|[0-9])+", route)
 }
 
-func isPortValid(port string) bool {
-	return govalidator.IsInt(port)
+func (p Parrot) ListenAndRepeat() error {
+	http.HandleFunc(p.route, p.forward)
+	return http.ListenAndServe(fmt.Sprintf(":%s", p.port), nil)
 }
 
+// Pass request to handler
+func (p Parrot) forward(resp http.ResponseWriter, req *http.Request){
+	fmt.Println(*req)
+	h := Handler{resp, req, p.forwarding}
+	h.Handle()
+}

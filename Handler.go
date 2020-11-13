@@ -8,18 +8,19 @@ import (
 type Handler struct {
 	resp http.ResponseWriter
 	req	*http.Request
+	forwarding string
 }
 
-func (h Handler) Handle(method string) {
-	switch method {
+func (h Handler) Handle() {
+	switch h.req.Method {
 	case "OPTIONS":
-		h.HandleCors()
+		h.handleCors()
 	default:
-		h.HandleRequest()
+		h.handleRequest()
 	}
 }
 
-func (h Handler) WriteCORSHeaders() {
+func (h Handler) writeCORSHeaders() {
 	origin := h.req.Header.Get("Origin")
 	acrheaders := h.req.Header.Get("Access-Control-Request-Headers")
 	acrmethod := h.req.Header.Get("Access-Control-Request-Method")
@@ -28,20 +29,20 @@ func (h Handler) WriteCORSHeaders() {
 	if len(acrmethod) > 0 { h.resp.Header().Set("Access-Control-Allow-Method", acrmethod) }
 }
 
-func (h Handler) HandleCors() {
-	h.WriteCORSHeaders()
+func (h Handler) handleCors() {
+	h.writeCORSHeaders()
 	h.resp.WriteHeader(200)
 }
 
-func (h Handler) HandleRequest() {
+func (h Handler) handleRequest() {
 	// Forward request
-	apiResp, err := http.Post(p.forwarding, "text/plain;charset=UTF-8", h.req.Body)
+	apiResp, err := http.Post(h.forwarding, "text/plain;charset=UTF-8", h.req.Body)
 	if err != nil {
 		return
 	}
 
 	// Write response back to caller
-	h.WriteCORSHeaders()
+	h.writeCORSHeaders()
 	h.resp.WriteHeader(apiResp.StatusCode)
 	respBytes, err := ioutil.ReadAll(apiResp.Body)
 	apiResp.Body.Close()
